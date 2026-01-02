@@ -1,0 +1,1 @@
+import{v as n}from"./session-request-kPHg5dVd.js";import"./index-ZI4kWCQR.js";async function o(e){const{account:s,params:a}=e;return n(s,a[1]),s.signMessage({message:{raw:a[0]}})}export{o as handleSignRequest};
