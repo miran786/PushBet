@@ -62,8 +62,8 @@ function Register() {
         <div></div>
       </div>
       <div className="top">
-        <img src={logo} alt="Pump Royale logo" />
-        <p>PUMPROYALE</p>
+        <img src={logo} alt="PushBet logo" />
+        <p>PUSHBET</p>
       </div>
       <div className="middle">
         <h2>Create</h2>

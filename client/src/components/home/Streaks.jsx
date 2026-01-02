@@ -50,7 +50,7 @@ const Streak = () => {
         <div style={styles.nextMultiplier}>
           <span style={styles.nextMultiplierText}>
             5 more days to earn a <span style={styles.accent}>1.3X</span> on
-            PUMP rewards
+            PushBet rewards
           </span>
         </div>
       </div>

@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: "autoUpdate", // Updates service worker automatically when there are changes
       includeAssets: ["favicon.svg", "robots.txt", "apple-touch-icon.png"], // PWA assets
       manifest: {
-        name: "Pump Royale",
-        short_name: "PumpRoyale",
+        name: "PushBet",
+        short_name: "PushBet",
         description: "An engaging fitness tracking game!",
         theme_color: "#ffffff",
         icons: [

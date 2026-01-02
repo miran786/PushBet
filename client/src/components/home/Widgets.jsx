@@ -10,7 +10,7 @@ const Widgets = () => {
     },
     {
       id: 2,
-      label: "Pump Score",
+      label: "PushBet Score",
       value: "120",
       colors: ["#FFC837", "#FF8008"],
     },
