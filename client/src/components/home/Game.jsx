@@ -333,9 +333,7 @@ const Game = () => {
             <button className="joinButton" onClick={handleJoinGame}>
               Stake
             </button>
-            <button className="joinButton" onClick={handleAddToken} style={{ marginTop: "10px", backgroundColor: "#2196F3" }}>
-              Add MockUSDC to Wallet
-            </button>
+
           </div>
         ) : gameStatus === "created" && hasJoinedGame ? (
           <p className="joinedMessage">Joined Game</p>
