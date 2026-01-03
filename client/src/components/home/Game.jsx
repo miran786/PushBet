@@ -8,7 +8,7 @@ import {
   submitResponse,
 } from "../../utils/gameFunctions";
 import Logo from "../../assets/logo.png";
-import { joinGameContract } from "../../utils/SmartContract";
+import { joinGameContract, addTokenToMetaMask } from "../../utils/SmartContract";
 import ChainInfo from "../../utils/chains.json";
 import { detectCurrentNetwork, switchNetwork } from "../../utils/DetectCurrentNetwork";
 
@@ -72,6 +72,12 @@ const Game = () => {
 
   const handleJoinGame = async () => {
     setLoading(true);
+    if (!user) {
+      showNotification("Please log in to join the game.");
+      setLoading(false);
+      return;
+    }
+
     if (!stake || isNaN(stake)) {
       showNotification("Please enter a valid stake amount.");
       setLoading(false);
@@ -108,6 +114,20 @@ const Game = () => {
     }
   };
 
+
+  const handleAddToken = async () => {
+    const currentNetwork = await detectCurrentNetwork();
+    if (ChainInfo[currentNetwork]) {
+      await addTokenToMetaMask(
+        ChainInfo[currentNetwork].usdcTokenCA,
+        "mUSDC",
+        6
+      );
+    } else {
+      showNotification("Unsupported network.");
+    }
+  };
+
   const startCountdown = () => {
     setTimeLeft(60);
     const timer = setInterval(() => {
@@ -131,9 +151,10 @@ const Game = () => {
   }, [gameStatus]);
 
   const checkUserResult = async () => {
+    if (!user) return; // Prevent check if user is not logged in
     try {
       const response = await axios.get(
-        `https://localhost:8000/game/result/${user._id}`
+        `https://localhost:8000/game/result/${user.walletAddress}`
       );
       setUserResult(response.data.result);
     } catch (error) {
@@ -311,6 +332,9 @@ const Game = () => {
             />
             <button className="joinButton" onClick={handleJoinGame}>
               Stake
+            </button>
+            <button className="joinButton" onClick={handleAddToken} style={{ marginTop: "10px", backgroundColor: "#2196F3" }}>
+              Add MockUSDC to Wallet
             </button>
           </div>
         ) : gameStatus === "created" && hasJoinedGame ? (

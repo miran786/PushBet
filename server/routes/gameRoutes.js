@@ -20,6 +20,8 @@ const upload = multer({ dest: "uploads/" });
 
 router.post("/submitResponse", upload.single("video"), submitResponse);
 
+router.get("/result/:walletAddress", getUserResult);
+
 router.get("/", getLatestPastGame);
 
 module.exports = router;

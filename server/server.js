@@ -27,6 +27,8 @@ const io = new Server(server, {
     origin: [
       "https://localhost:5173",
       "http://localhost:5173",
+      "https://localhost:5174",
+      "http://localhost:5174",
       "https://192.168.31.201:5174",
       "http://192.168.31.201:5174",
     ],
@@ -39,6 +41,8 @@ app.use(
     origin: [
       "https://localhost:5173",
       "http://localhost:5173",
+      "https://localhost:5174",
+      "http://localhost:5174",
       "https://192.168.31.201:5174",
       "http://192.168.31.201:5174",
     ],

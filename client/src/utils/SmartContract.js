@@ -136,3 +136,61 @@ export const getWinners = async (contractAddress, selectedPlayers) => {
   console.log("Selected winners: ", winners);
   return winners;
 };
+
+export const mintUSDC = async (usdcAddress, amount) => {
+  const web3 = await initializeWeb3();
+  if (!web3) return;
+
+  const accounts = await web3.eth.getAccounts();
+  const playerAddress = accounts[0];
+
+  // Minimal ABI for mint function
+  const minABI = [
+    {
+      inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
+      name: "mint",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ];
+
+  const usdcContract = new web3.eth.Contract(minABI, usdcAddress);
+
+  const amountWei = web3.utils.toWei(amount.toString(), "mwei");
+  const mintTxGas = await usdcContract.methods
+    .mint(amountWei)
+    .estimateGas({ from: playerAddress });
+
+  const mintTx = await usdcContract.methods
+    .mint(amountWei)
+    .send({ from: playerAddress, gas: mintTxGas });
+
+  const mintTxReceipt = await waitForTransaction(web3, mintTx.transactionHash);
+  console.log("MintTxReceipt: ", mintTxReceipt);
+  return mintTxReceipt;
+};
+
+export const addTokenToMetaMask = async (tokenAddress, tokenSymbol, tokenDecimals) => {
+  try {
+    const wasAdded = await window.ethereum.request({
+      method: "wallet_watchAsset",
+      params: {
+        type: "ERC20",
+        options: {
+          address: tokenAddress,
+          symbol: tokenSymbol,
+          decimals: tokenDecimals,
+        },
+      },
+    });
+
+    if (wasAdded) {
+      console.log("Token added to MetaMask!");
+    } else {
+      console.log("Token addition rejected.");
+    }
+  } catch (error) {
+    console.error("Error adding token to MetaMask:", error);
+  }
+};

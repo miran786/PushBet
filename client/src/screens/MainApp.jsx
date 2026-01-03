@@ -5,6 +5,7 @@ import Home from "./private/Home";
 import Wallet from "./private/Wallet";
 import Games from "./private/Games";
 import Rankings from "./private/Rankings";
+import PoseTracking from "./private/PoseTracking";
 
 function MainNavigation() {
   return (
@@ -14,6 +15,7 @@ function MainNavigation() {
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/games" element={<Games />} />
         <Route path="/ranking" element={<Rankings />} />
+        <Route path="/pose" element={<PoseTracking />} />
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
       <BottomTab />

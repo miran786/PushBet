@@ -1,14 +1,19 @@
 {
-  "name": "server",
+  "name": "pushbet-server",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon server.js"
+    "start": "nodemon server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "Miran",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miran786/PushBet"
+  },
   "description": "",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -24,5 +29,8 @@
     "multer": "^1.4.5-lts.1",
     "node-cron": "^3.0.3",
     "socket.io": "^4.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }

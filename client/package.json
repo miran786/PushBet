@@ -1,5 +1,5 @@
 {
-  "name": "client",
+  "name": "pushbet-client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,14 @@
   "keywords": [],
   "author": "Miran",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/miran786/PushBet"
+  },
   "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1675466862",
+    "@mediapipe/drawing_utils": "^0.3.1675466124",
+    "@mediapipe/pose": "^0.5.1675469404",
     "@walletconnect/web3-provider": "^1.8.0",
     "axios": "^1.7.7",
     "react": "^18.3.1",
@@ -21,6 +28,7 @@
     "react-router-dom": "^6.26.2",
     "react-spring": "^9.7.4",
     "react-use-gesture": "^9.1.3",
+    "react-webcam": "^7.2.0",
     "socket.io-client": "^4.8.0",
     "thirdweb": "^5.61.1",
     "web3": "^4.13.0"

@@ -1,4 +1,4 @@
-# Hackathon Project
+# PushBet
 
 A full-stack decentralized application (dApp) built for the Hackathon. This project features a React-based frontend, a Node.js/Express backend, and integrates with blockchain smart contracts.
 
@@ -40,8 +40,8 @@ Before running the project, ensure you have the following installed:
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd <project-directory>
+git clone https://github.com/miran786/PushBet
+cd PushBet
 ```
 
 ### 2. Start the Database

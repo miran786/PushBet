@@ -156,11 +156,10 @@ const getLatestPastGame = async (req, res) => {
   }
 };
 
-module.exports = { getUserResult };
-
 module.exports = {
   joinGame,
   submitResponse,
   getAllGames,
+  getUserResult,
   getLatestPastGame,
 };
