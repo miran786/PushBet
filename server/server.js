@@ -14,13 +14,27 @@ dotenv.config();
 
 const app = express();
 
-// Load SSL credentials
-const privateKey = fs.readFileSync("../client/server.key", "utf8"); // Adjust path if needed
-const certificate = fs.readFileSync("../client/server.cert", "utf8"); // Adjust path if needed
-const credentials = { key: privateKey, cert: certificate };
+const http = require("http");
 
-// Create an HTTPS server
-const server = https.createServer(credentials, app);
+// Load SSL credentials or fallback to HTTP
+let server;
+if (process.env.NODE_ENV === "production") {
+  // On Render/Production, use basic HTTP (Load Balancer handles SSL)
+  console.log("Production environment detected. Starting HTTP server.");
+  server = http.createServer(app);
+} else {
+  // Local Development: Try to use HTTPS
+  try {
+    const privateKey = fs.readFileSync("../client/server.key", "utf8");
+    const certificate = fs.readFileSync("../client/server.cert", "utf8");
+    const credentials = { key: privateKey, cert: certificate };
+    server = https.createServer(credentials, app);
+    console.log("Local development: Starting HTTPS server.");
+  } catch (error) {
+    console.warn("SSL certificates not found. Falling back to HTTP.");
+    server = http.createServer(app);
+  }
+}
 
 const io = new Server(server, {
   cors: {
