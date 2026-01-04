@@ -353,6 +353,9 @@ const Game = () => {
 
       mediaRecorder.start();
       setIsRecording(true);
+      // Reset count and stage when recording starts to avoid false positives
+      setCount(0);
+      setStage("UP"); // Force user to start from UP position (or at least go UP before going DOWN)
     } catch (error) {
       console.error("Error starting video recording:", error);
     }
@@ -399,6 +402,9 @@ const Game = () => {
     (acc, player) => acc + (player.stakeAmount || 0),
     0
   );
+
+  // Find current user's stake
+  const myPlayer = players.find(p => p.walletAddress === user?.walletAddress);
 
   return (
     <div className="game-container">
@@ -475,12 +481,12 @@ const Game = () => {
               <span
                 style={{
                   fontSize: "1em",
-                  color: "#aaa",
+                  color: "#ff5252",
                   display: "block",
                   marginTop: "5px",
                 }}
               >
-                Better luck next time.
+                You lost ${myPlayer?.stakeAmount || 0} from your account.
               </span>
             )}
           </p>

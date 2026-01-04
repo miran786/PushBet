@@ -125,10 +125,12 @@ module.exports = (io) => {
     const rewardAmount = (poolAmount * 0.7) / winners.length;
 
     // Update the winners' funds
+    // Fix: Winners must get their STAKE + REWARD. 
+    // If there are no losers, rewardAmount is 0, but they still get their stake back.
     for (const winner of winners) {
       const user = await User.findOne({ walletAddress: winner.walletAddress });
       if (user) {
-        user.funds += rewardAmount;
+        user.funds += (game.stakeAmount + (rewardAmount || 0)); // Return Principal + Reward
         await user.save();
       }
     }
