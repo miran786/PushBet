@@ -152,7 +152,8 @@ const Game = () => {
       };
     }
   }, [isRecording]);
-  const isUserInGame = players.includes(user?._id);
+  /* Fix: isUserInGame should check walletAddress in players array of objects */
+  const isUserInGame = players.some((p) => p.walletAddress === user?.walletAddress);
 
   useEffect(() => {
     const fetchGame = async () => {
@@ -173,7 +174,12 @@ const Game = () => {
 
           setGameStatus(mappedStatus);
           setPlayers(currentGame.players || []);
-          setHasJoinedGame(currentGame.players.includes(user?._id));
+          /* Fix: Check using walletAddress */
+          setHasJoinedGame(
+            (currentGame.players || []).some(
+              (p) => p.walletAddress === user?.walletAddress
+            )
+          );
         }
       } catch (error) {
         console.error("Error fetching game data:", error);
@@ -188,7 +194,7 @@ const Game = () => {
       setGameStatus,
       showNotification
     );
-  }, []);
+  }, [user]); /* Added user to dependency to ensure check runs when user loads */
 
   const handleJoinGame = async () => {
     setLoading(true);
@@ -220,7 +226,11 @@ const Game = () => {
 
       const errorMessage = await joinGame(user._id, stake, showNotification);
       if (!errorMessage) {
-        setPlayers((prevPlayers) => [...prevPlayers, user._id]);
+        /* Fix: Push object to match state structure */
+        setPlayers((prevPlayers) => [
+          ...prevPlayers,
+          { walletAddress: user.walletAddress, stakeAmount: parseFloat(stake) },
+        ]);
         setStake("");
         setHasJoinedGame(true);
       } else {
@@ -249,7 +259,7 @@ const Game = () => {
   };
 
   const startCountdown = () => {
-    setTimeLeft(60);
+    setTimeLeft(30);
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
@@ -384,6 +394,12 @@ const Game = () => {
   /* New hasSubmitted state to track submission status */
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
+  /* Calculate Pool Size */
+  const poolSize = players.reduce(
+    (acc, player) => acc + (player.stakeAmount || 0),
+    0
+  );
+
   return (
     <div className="game-container">
       {loading && (
@@ -431,7 +447,42 @@ const Game = () => {
         )}
         {gameStatus === "ended" && (
           <p className="globalText">
-            The game has ended. {userResult ? `You ${userResult}!` : ""}
+            The game has ended.{" "}
+            <span
+              style={{
+                fontSize: "2em",
+                fontWeight: "bold",
+                color: userResult === "win" ? "green" : "red",
+                display: "block",
+                marginTop: "10px",
+              }}
+            >
+              {userResult ? `You ${userResult}!` : ""}
+            </span>
+            {userResult === "win" && (
+              <span
+                style={{
+                  fontSize: "1em",
+                  color: "#4caf50",
+                  display: "block",
+                  marginTop: "5px",
+                }}
+              >
+                Reward transferred to your wallet.
+              </span>
+            )}
+            {userResult === "lose" && (
+              <span
+                style={{
+                  fontSize: "1em",
+                  color: "#aaa",
+                  display: "block",
+                  marginTop: "5px",
+                }}
+              >
+                Better luck next time.
+              </span>
+            )}
           </p>
         )}
 
@@ -440,7 +491,11 @@ const Game = () => {
             {gameStatus === "created"
               ? "Current Pool Size"
               : "Current Reward Pool"}{" "}
-            <span className="poolAmount">$1,253,000</span>
+            <span className="poolAmount">${poolSize}</span>
+            <br />
+            <span style={{ fontSize: "0.8em", color: "#ccc" }}>
+              Active Members: {players.length}
+            </span>
           </p>
         )}
 
@@ -506,7 +561,7 @@ const Game = () => {
                   zIndex: 12
                 }}>
                   <h3>Count: {count}</h3>
-                  {count < 5 && <p style={{ color: "red", fontWeight: "bold" }}>Do at least 5 to win!</p>}
+
                 </div>
               )}
               {!isRecording && count < 5 && videoBlob && (

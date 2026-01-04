@@ -83,7 +83,7 @@ module.exports = (io) => {
     setTimeout(() => {
       console.log("Ending game automatically...");
       endGame(game._id);
-    }, 60 * 1000); // End the game after 10 minutes
+    }, 30 * 1000); // End the game after 30 seconds for demo
   };
 
   const resetGame = async () => {
