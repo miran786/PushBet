@@ -11,7 +11,7 @@ const AdminPage = () => {
 
   // Function to handle API requests using axios
   const sendCommand = async (command) => {
-    let endpoint = `https://localhost:8000/admin/${command}`; // Update the endpoint to match the backend
+    let endpoint = `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/admin/${command}`; // Update the endpoint to match the backend
     let body = {};
 
     if (command === "end") {
@@ -39,7 +39,7 @@ const AdminPage = () => {
   // Function to fetch the latest past game
   const fetchLatestPastGame = async () => {
     try {
-      const response = await axios.get("https://localhost:8000/game/result"); // Adjust the endpoint as needed
+      const response = await axios.get(`${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/result`); // Adjust the endpoint as needed
       const gameData = response.data.game; // Use game data directly from the response
 
       setLatestGame(gameData); // Update the state for UI purposes

@@ -35,7 +35,7 @@ function Register() {
 
     const registerBackend = async () => {
       const response = await axios.post(
-        "https://localhost:8000/user/register",
+        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/user/register`,
         {
           username,
           email,

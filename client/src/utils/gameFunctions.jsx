@@ -8,7 +8,7 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-const socket = io("https://localhost:8000");
+const socket = io(import.meta.env.VITE_SERVER_URL || "https://localhost:8000");
 
 export const initializeSocketListeners = (
   setNotification,
@@ -77,7 +77,7 @@ export const initializeSocketListeners = (
 export const joinGame = async (userId, stakeAmount, showNotification) => {
   try {
     const response = await axios.post(
-      "https://localhost:8000/game/joinGame",
+      `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/joinGame`,
       {
         userId,
         stake: stakeAmount,
@@ -108,7 +108,7 @@ export const submitResponse = async (
   try {
     console.log(`Submiting video ${videoSubmitted} from ${userId}`);
     const response = await axios.post(
-      "https://localhost:8000/game/submitResponse",
+      `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/submitResponse`,
       {
         userId,
         videoSubmitted,

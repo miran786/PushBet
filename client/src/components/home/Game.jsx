@@ -158,7 +158,7 @@ const Game = () => {
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const response = await axios.get("https://localhost:8000/game/");
+        const response = await axios.get(`${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/`);
         if (response.data.message === "No games found.") {
           setGameStatus("none");
         } else {
@@ -284,7 +284,7 @@ const Game = () => {
     if (!user) return; // Prevent check if user is not logged in
     try {
       const response = await axios.get(
-        `https://localhost:8000/game/result/${user.walletAddress}`
+        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/result/${user.walletAddress}`
       );
       setUserResult(response.data.result);
     } catch (error) {
@@ -377,7 +377,7 @@ const Game = () => {
 
     try {
       const response = await axios.post(
-        `https://localhost:8000/game/submitResponse`,
+        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/submitResponse`,
         formData,
         {
           headers: {
