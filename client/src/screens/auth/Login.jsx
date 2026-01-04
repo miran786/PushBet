@@ -1,8 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../utils/AuthProvider";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
-import axios from "axios";
 import { client } from "../../client";
 import logo from "../../assets/logo.png";
 
@@ -23,33 +24,26 @@ function Login() {
   }, [activeAccount, setWalletAddress]);
 
   const handleLogin = async () => {
+    /*
     if (!walletAddress) {
       setError("Please connect your wallet to continue.");
       return;
     }
+    */
 
     try {
       setLoading(true); // Show the loading spinner
-      const response = await axios.post("https://localhost:8000/user/login", {
-        email,
-        password,
-        walletAddress,
-      });
+      await signInWithEmailAndPassword(auth, email, password);
+      // AuthProvider handles setting the user via onAuthStateChanged
 
-      if (response.data.success) {
-        setUser(response.data.user);
+      // Set a 2-second delay before navigating to the next page
+      setTimeout(() => {
+        setLoading(false); // Hide the loader after 2 seconds
+        navigate("/home");
+      }, 2000);
 
-        // Set a 2-second delay before navigating to the next page
-        setTimeout(() => {
-          setLoading(false); // Hide the loader after 2 seconds
-          navigate("/home");
-        }, 2000);
-      } else {
-        setError(response.data.message || "Login failed");
-        setLoading(false); // Hide the loader in case of error
-      }
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred during login");
+      setError(err.message || "An error occurred during login");
       console.error("Login error:", err);
       setLoading(false); // Hide the loader in case of error
     }

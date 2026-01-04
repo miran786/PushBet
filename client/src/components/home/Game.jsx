@@ -11,6 +11,9 @@ import Logo from "../../assets/logo.png";
 import { joinGameContract, addTokenToMetaMask } from "../../utils/SmartContract";
 import ChainInfo from "../../utils/chains.json";
 import { detectCurrentNetwork, switchNetwork } from "../../utils/DetectCurrentNetwork";
+import { Pose, POSE_CONNECTIONS } from "@mediapipe/pose";
+import { Camera } from "@mediapipe/camera_utils";
+import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 
 const Game = () => {
   const { user } = useContext(AuthContext);
@@ -31,7 +34,124 @@ const Game = () => {
   const [loading, setLoading] = useState(false);
 
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const mediaRecorderRef = useRef(null);
+  const [count, setCount] = useState(0);
+  const countRef = useRef(0);
+  useEffect(() => { countRef.current = count; }, [count]);
+  const [stage, setStage] = useState("DOWN");
+
+  const calculateAngle = (a, b, c) => {
+    const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
+    let angle = Math.abs((radians * 180.0) / Math.PI);
+    if (angle > 180.0) {
+      angle = 360 - angle;
+    }
+    return angle;
+  };
+
+  useEffect(() => {
+    if (isRecording && videoRef.current) {
+      let animationFrameId;
+      const pose = new Pose({
+        locateFile: (file) => {
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+        },
+      });
+
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        smoothSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+      });
+
+      pose.onResults((results) => {
+        if (!canvasRef.current) return;
+
+        const canvasElement = canvasRef.current;
+        const canvasCtx = canvasElement.getContext("2d");
+
+        // Should verify width/height are available
+        if (!videoRef.current || !videoRef.current.videoWidth) return;
+
+        // Match canvas size to video explicitly every frame to be safe or just when changed
+        if (canvasElement.width !== videoRef.current.videoWidth) {
+          canvasElement.width = videoRef.current.videoWidth;
+          canvasElement.height = videoRef.current.videoHeight;
+          console.log("Canvas resized to", canvasElement.width, "x", canvasElement.height);
+        }
+
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.poseLandmarks) {
+          // Ensure lineWidth is visible
+          drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+            color: "#00FF00",
+            lineWidth: 4,
+          });
+          drawLandmarks(canvasCtx, results.poseLandmarks, {
+            color: "#FF0000",
+            lineWidth: 2,
+          });
+
+          // Calculate push-up angle
+          const landmarks = results.poseLandmarks;
+          const leftShoulder = landmarks[11];
+          const leftElbow = landmarks[13];
+          const leftWrist = landmarks[15];
+
+          if (leftShoulder && leftElbow && leftWrist) {
+            const angle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+
+            // Push-up logic
+            setStage((prevStage) => {
+              if (angle > 160) {
+                if (prevStage === "DOWN") {
+                  setCount((prevCount) => prevCount + 1);
+                }
+                return "UP";
+              } else if (angle < 90) {
+                return "DOWN";
+              }
+              return prevStage;
+            });
+          }
+        }
+        canvasCtx.restore();
+      });
+
+      const loop = async () => {
+        // Only send data if video is playing and has data
+        if (videoRef.current &&
+          videoRef.current.readyState >= 2 && // HAVE_CURRENT_DATA
+          !videoRef.current.paused &&
+          !videoRef.current.ended) {
+          try {
+            await pose.send({ image: videoRef.current });
+          } catch (e) {
+            console.error("Pose send error:", e);
+          }
+        }
+        if (isRecording) { // Check closure variable? isRecording might change in the component but this effect runs ONCE when isRecording BECOMES true.
+          // Actually this effect depends on [isRecording]. When isRecording becomes false, this effect cleanup runs, and we should stop the loop.
+          // We can use a ref or check a variable. 
+          // However, since we re-run the effect when isRecording changes (it goes false), the cleanup below will be called.
+          // We should cancel the animation frame there.
+          animationFrameId = requestAnimationFrame(loop);
+        }
+      };
+      loop();
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        pose.close();
+      };
+    }
+  }, [isRecording]);
   const isUserInGame = players.includes(user?._id);
 
   useEffect(() => {
@@ -218,6 +338,7 @@ const Game = () => {
         const blob = new Blob(chunks, { type: "video/webm" });
         setVideoBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
+        submitVideo(blob);
       };
 
       mediaRecorder.start();
@@ -232,12 +353,14 @@ const Game = () => {
     setIsRecording(false);
   };
 
-  const submitVideo = async () => {
-    if (!videoBlob) return;
+  const submitVideo = async (blobArg) => {
+    const blobToSubmit = blobArg || videoBlob;
+    if (!blobToSubmit) return;
 
     const formData = new FormData();
-    formData.append("video", videoBlob, "pushups.webm");
-    formData.append("walletAddress", walletAddress); // Correct field name here
+    formData.append("video", blobToSubmit, "pushups.webm");
+    formData.append("walletAddress", walletAddress);
+    formData.append("pushupCount", countRef.current);
 
     try {
       const response = await axios.post(
@@ -251,11 +374,15 @@ const Game = () => {
       );
       showNotification("Video submitted successfully!");
       setVideoBlob(null); // Clear the video blob after submission
+      setHasSubmitted(true);
     } catch (error) {
       console.error("Error submitting video:", error);
       showNotification("Error submitting video.");
     }
   };
+
+  /* New hasSubmitted state to track submission status */
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   return (
     <div className="game-container">
@@ -298,7 +425,7 @@ const Game = () => {
         {gameStatus === "active" && (
           <p className="globalText">
             {isUserInGame
-              ? "Game is in progress. Time left to do pushups!"
+              ? hasSubmitted ? "Response Recorded. Good Luck!" : "Game is in progress. Time left to do pushups!"
               : "The game is in progress, but you are not enrolled."}
           </p>
         )}
@@ -339,33 +466,74 @@ const Game = () => {
           <p className="joinedMessage">Joined Game</p>
         ) : null}
 
-        {gameStatus === "active" && isUserInGame && (
+        {gameStatus === "active" && isUserInGame && !hasSubmitted && (
           <div className="timeContainer">
             <p className="startText">Time Left</p>
             <div className="timer">
               <p className="startText">{formatTime(timeLeft)}</p>
             </div>
 
-            <video
-              ref={videoRef}
-              className="videoFeed"
-              autoPlay
-              playsInline
-              style={{ display: isRecording || videoBlob ? "block" : "none" }}
-            />
+            <div style={{ position: "relative", width: "100%" }}>
+              <video
+                ref={videoRef}
+                className="videoFeed"
+                autoPlay
+                playsInline
+                style={{ display: isRecording || videoBlob ? "block" : "none", width: "100%" }}
+              />
+              <canvas
+                ref={canvasRef}
+                style={{
+                  position: "fixed",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100vh",
+                  pointerEvents: "none",
+                  display: isRecording ? "block" : "none",
+                  zIndex: 11
+                }}
+              />
+              {isRecording && (
+                <div style={{
+                  position: "fixed",
+                  top: 10,
+                  left: 10,
+                  color: "white",
+                  backgroundColor: "rgba(0,0,0,0.5)",
+                  padding: "5px 10px",
+                  borderRadius: "5px",
+                  zIndex: 12
+                }}>
+                  <h3>Count: {count}</h3>
+                  {count < 5 && <p style={{ color: "red", fontWeight: "bold" }}>Do at least 5 to win!</p>}
+                </div>
+              )}
+              {!isRecording && count < 5 && videoBlob && (
+                <div style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                  backgroundColor: "rgba(255, 0, 0, 0.8)",
+                  color: "white",
+                  padding: "20px",
+                  borderRadius: "10px",
+                  fontWeight: "bold",
+                  zIndex: 20
+                }}>
+                  YOU LOSE!
+                </div>
+              )}
+            </div>
 
             <div className="videoControls">
               <button
                 onClick={isRecording ? stopRecording : startRecording}
                 className="videoButton"
               >
-                {isRecording ? "Stop Recording" : "Record Pushups"}
+                {isRecording ? "Stop Recording / Submit" : "Record Pushups"}
               </button>
-              {videoBlob && (
-                <button onClick={submitVideo} className="videoButton">
-                  Submit Video
-                </button>
-              )}
             </div>
           </div>
         )}

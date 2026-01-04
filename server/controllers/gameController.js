@@ -60,7 +60,7 @@ const joinGame = async (req, res) => {
 // User submits video response
 // In gameController.js
 const submitResponse = async (req, res) => {
-  const { walletAddress } = req.body;
+  const { walletAddress, pushupCount } = req.body;
   const videoFile = req.file; // The uploaded video file is in req.file if Multer is being used
 
   if (!videoFile) {
@@ -68,7 +68,7 @@ const submitResponse = async (req, res) => {
     return res.status(400).json({ message: "No video uploaded" });
   }
 
-  console.log("Submitting response for wallet:", walletAddress);
+  console.log("Submitting response for wallet:", walletAddress, "Count:", pushupCount);
 
   try {
     const game = await Game.findOne({ status: "active", gameStarted: true });
@@ -81,7 +81,8 @@ const submitResponse = async (req, res) => {
       return res.status(400).json({ message: "walletAddress is required" });
     }
 
-    const response = videoFile ? "yes" : "no"; // Adjust response based on the video file being uploaded
+    const count = parseInt(pushupCount, 10) || 0;
+    const response = (videoFile && count >= 5) ? "yes" : "no";
     game.responses.push({ walletAddress, response });
 
     await game.save();
@@ -119,7 +120,7 @@ const getUserResult = async (req, res) => {
   try {
     const game = await PastGame.findOne({
       "players.walletAddress": walletAddress,
-    });
+    }).sort({ _id: -1 });
     if (!game) {
       console.log(
         `No past game found for user with wallet address ${walletAddress}`

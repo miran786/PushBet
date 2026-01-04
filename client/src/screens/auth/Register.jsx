@@ -7,6 +7,9 @@ import axios from "axios";
 import { client } from "../../client";
 import logo from "../../assets/logo.png";
 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../firebase";
+
 function Register() {
   const { setUser, walletAddress, setWalletAddress } = useContext(AuthContext);
   const activeAccount = useActiveAccount();
@@ -28,8 +31,9 @@ function Register() {
       setError("Please connect your wallet to continue.");
       return;
     }
+    setError("");
 
-    try {
+    const registerBackend = async () => {
       const response = await axios.post(
         "https://localhost:8000/user/register",
         {
@@ -39,18 +43,45 @@ function Register() {
           walletAddress,
         }
       );
+      return response;
+    };
+
+    try {
+      // 1. Create user in Firebase
+      await createUserWithEmailAndPassword(auth, email, password);
+
+      // 2. Create user in MongoDB
+      const response = await registerBackend();
 
       if (response.status === 201) {
-        setUser(response.data.user);
         navigate("/home");
-      } else {
-        setError(response.data.message || "Registration failed");
       }
     } catch (err) {
-      setError(
-        err.response?.data?.error || "An error occurred during registration"
-      );
       console.error("Registration error:", err);
+
+      // Handle "Email already in use" (Firebase error)
+      if (err.code === "auth/email-already-in-use") {
+        console.log("User exists in Firebase, attempting backend registration...");
+        try {
+          // Try to create in backend in case it was missed
+          const response = await registerBackend();
+          if (response.status === 201) {
+            navigate("/home");
+            return;
+          }
+        } catch (backendErr) {
+          console.error("Backend registration error:", backendErr);
+          // If backend also fails (likely duplicate), then user is fully registered.
+          // Or if backend fails with other error.
+          // We can suggest login.
+          setError("Account already exists. Please Login.");
+          return;
+        }
+      }
+
+      setError(
+        err.message || err.response?.data?.error || "An error occurred during registration"
+      );
     }
   };
 
