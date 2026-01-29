@@ -8,13 +8,9 @@ import {
   FaTimes,
 } from "react-icons/fa";
 
-<<<<<<< HEAD
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://localhost:8000";
 const socket = io(BACKEND_URL);
-=======
-const socket = io(import.meta.env.VITE_SERVER_URL || "https://localhost:8000");
->>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
 
 export const initializeSocketListeners = (
   setNotification,
@@ -83,11 +79,7 @@ export const initializeSocketListeners = (
 export const joinGame = async (userId, stakeAmount, showNotification) => {
   try {
     const response = await axios.post(
-<<<<<<< HEAD
       `${import.meta.env.VITE_BACKEND_URL || "https://localhost:8000"}/game/joinGame`,
-=======
-      `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/joinGame`,
->>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
       {
         userId,
         stake: stakeAmount,
@@ -118,11 +110,7 @@ export const submitResponse = async (
   try {
     console.log(`Submiting video ${videoSubmitted} from ${userId}`);
     const response = await axios.post(
-<<<<<<< HEAD
       `${import.meta.env.VITE_BACKEND_URL || "https://localhost:8000"}/game/submitResponse`,
-=======
-      `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/submitResponse`,
->>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
       {
         userId,
         videoSubmitted,
