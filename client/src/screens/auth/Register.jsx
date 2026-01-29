@@ -40,7 +40,11 @@ function Register() {
       const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
       // Note: Fixed https to http for localhost unless certs are set up, common issue.
       const response = await axios.post(
+<<<<<<< HEAD
         `${backendUrl}/user/register`,
+=======
+        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/user/register`,
+>>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
         {
           username,
           email,

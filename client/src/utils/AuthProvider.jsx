@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
         try {
           // You need to import axios if not already imported, but let's assume it is or use fetch
           // Better to use axios as per project standard
-          const response = await axios.post("https://localhost:8000/user/get-by-email", {
+          const response = await axios.post(`${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/user/get-by-email`, {
             email: currentUser.email
           });
           setUser({ ...currentUser, ...response.data }); // Merge firebase and mongodb user data
