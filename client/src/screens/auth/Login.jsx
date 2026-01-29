@@ -6,6 +6,7 @@ import { auth } from "../../firebase";
 import { ConnectButton, useActiveAccount } from "thirdweb/react";
 import { client } from "../../client";
 import logo from "../../assets/logo.png";
+import "./Auth.css";
 
 function Login() {
   const { setUser, walletAddress, setWalletAddress } = useContext(AuthContext);

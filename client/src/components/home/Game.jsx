@@ -15,7 +15,7 @@ import { Pose, POSE_CONNECTIONS } from "@mediapipe/pose";
 import { Camera } from "@mediapipe/camera_utils";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 
-const Game = () => {
+const Game = ({ selectedDeviceId, isSuspicious }) => {
   const { user } = useContext(AuthContext);
   const walletAddress = user?.walletAddress;
   const [notification, setNotification] = useState("");
@@ -41,6 +41,10 @@ const Game = () => {
   useEffect(() => { countRef.current = count; }, [count]);
   const [stage, setStage] = useState("DOWN");
 
+  // --- ANTI-CHEAT STATE ---
+  // Using prop isSuspicious instead of local state for detection
+
+
   const calculateAngle = (a, b, c) => {
     const radians = Math.atan2(c.y - b.y, c.x - b.x) - Math.atan2(a.y - b.y, a.x - b.x);
     let angle = Math.abs((radians * 180.0) / Math.PI);
@@ -48,6 +52,17 @@ const Game = () => {
       angle = 360 - angle;
     }
     return angle;
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setVideoBlob(null); // Clear any previous video
+    // Reset count and stage
+    setCount(0);
+    setStage("DOWN");
   };
 
   useEffect(() => {
@@ -90,32 +105,202 @@ const Game = () => {
         if (results.poseLandmarks) {
           // Ensure lineWidth is visible
           drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
-            color: "#00FF00",
-            lineWidth: 4,
-          });
-          drawLandmarks(canvasCtx, results.poseLandmarks, {
-            color: "#FF0000",
+            color: "rgba(0, 255, 255, 0.4)", // Sci-Fi Cyan (transparent)
             lineWidth: 2,
           });
+          drawLandmarks(canvasCtx, results.poseLandmarks, {
+            color: "#00FFFF", // Cyan dots
+            lineWidth: 1,
+            radius: 3
+          });
 
-          // Calculate push-up angle
-          const landmarks = results.poseLandmarks;
-          const leftShoulder = landmarks[11];
-          const leftElbow = landmarks[13];
-          const leftWrist = landmarks[15];
+          const lm = results.poseLandmarks;
 
-          if (leftShoulder && leftElbow && leftWrist) {
-            const angle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+          // Key points for Left side
+          const leftShoulder = lm[11];
+          const leftElbow = lm[13];
+          const leftWrist = lm[15];
+          const leftHip = lm[23];
+          const leftAnkle = lm[27];
 
-            // Push-up logic
+          // Key points for Right side
+          const rightShoulder = lm[12];
+          const rightElbow = lm[14];
+          const rightWrist = lm[16];
+          const rightHip = lm[24];
+          const rightAnkle = lm[28];
+
+          // Nose for Head HUD
+          const nose = lm[0];
+
+          if (leftShoulder && leftElbow && leftWrist && rightShoulder && rightElbow && rightWrist && leftHip && leftAnkle) {
+
+            // 1. Arm Angles
+            const leftArmAngle = calculateAngle(leftShoulder, leftElbow, leftWrist);
+            const rightArmAngle = calculateAngle(rightShoulder, rightElbow, rightWrist);
+
+            // 2. Body Alignment
+            const bodyAlignmentAngle = calculateAngle(leftShoulder, leftHip, leftAnkle);
+
+            // Thresholds
+            const ARM_EXTENDED_THRESHOLD = 160;
+            const ARM_BENT_THRESHOLD = 90;
+            const BODY_STRAIGHT_THRESHOLD = 150;
+
+            // --- HUD & VISUALS START ---
+            const width = canvasElement.width;
+            const height = canvasElement.height;
+
+            // A. Target Reticle on Head
+            if (nose) {
+              const nx = nose.x * width;
+              const ny = nose.y * height;
+
+              canvasCtx.strokeStyle = isSuspicious ? "red" : "#00FFFF";
+              canvasCtx.lineWidth = 2;
+              canvasCtx.beginPath();
+              canvasCtx.arc(nx, ny, 30, 0, 2 * Math.PI); // Circle around face
+              canvasCtx.moveTo(nx - 40, ny); canvasCtx.lineTo(nx - 20, ny); // Left Hash
+              canvasCtx.moveTo(nx + 40, ny); canvasCtx.lineTo(nx + 20, ny); // Right Hash
+              canvasCtx.moveTo(nx, ny - 40); canvasCtx.lineTo(nx, ny - 20); // Top Hash
+              canvasCtx.moveTo(nx, ny + 40); canvasCtx.lineTo(nx, ny + 20); // Bottom Hash
+              canvasCtx.stroke();
+
+              if (isSuspicious) {
+                canvasCtx.fillStyle = "red";
+                canvasCtx.font = "bold 20px Arial";
+                canvasCtx.fillText("VIRTUAL CAM", nx - 60, ny - 50);
+              }
+            }
+
+            // B. Energy Bar (Depth Gauge)
+            // Map arm angle (180 -> 70) to Percentage (0 -> 100)
+            // 180 = 0% (Start), 90 = 100% (Full Rep Depth)
+            const depthMetric = Math.min(100, Math.max(0, (180 - leftArmAngle) / (180 - 90) * 100));
+            const barCheck = depthMetric > 90; // "In the zone"
+
+            // Draw Bar Container
+            const barW = 30;
+            const barH = 300;
+            const barX = 40;
+            const barY = height / 2 - barH / 2;
+
+            canvasCtx.fillStyle = "rgba(0,0,0,0.5)";
+            canvasCtx.fillRect(barX, barY, barW, barH);
+
+            // Draw Fill
+            canvasCtx.fillStyle = barCheck ? "#00FF00" : (depthMetric > 50 ? "orange" : "#00FFFF");
+            const fillH = (depthMetric / 100) * barH;
+            canvasCtx.fillRect(barX, barY + (barH - fillH), barW, fillH);
+
+            // Draw Bar Border
+            canvasCtx.strokeStyle = "white";
+            canvasCtx.lineWidth = 2;
+            canvasCtx.strokeRect(barX, barY, barW, barH);
+
+            // Text Label
+            canvasCtx.fillStyle = "white";
+            canvasCtx.font = "12px monospace";
+            canvasCtx.fillText("DEPTH", barX - 5, barY + barH + 15);
+
+            // --- HUD END ---
+
+            let feedback = "";
+            let isBodyStraight = bodyAlignmentAngle > BODY_STRAIGHT_THRESHOLD;
+            let areArmsBent = leftArmAngle < ARM_BENT_THRESHOLD && rightArmAngle < ARM_BENT_THRESHOLD;
+            let areArmsExtended = leftArmAngle > ARM_EXTENDED_THRESHOLD && rightArmAngle > ARM_EXTENDED_THRESHOLD;
+
+            if (!isBodyStraight) {
+              feedback = "ALIGN CORE";
+              canvasCtx.strokeStyle = "red"; // Alert color
+            } else if (stage === "UP" && !areArmsBent && leftArmAngle < 140) {
+              feedback = "INCREASE DEPTH";
+            } else if (stage === "DOWN" && !areArmsExtended && leftArmAngle > 110) {
+              feedback = "EXTEND ARMS";
+            }
+
+            // Draw Sci-Fi Feedback
+            if (feedback) {
+              canvasCtx.fillStyle = "rgba(255, 0, 0, 0.8)";
+              canvasCtx.font = "bold 40px Courier New";
+              canvasCtx.fillText(`⚠ ${feedback}`, width / 2 - 150, 100);
+            }
+
+            // LIVENESS CHECK: Draw Timestamp
+            canvasCtx.fillStyle = "rgba(0, 255, 255, 0.7)";
+            canvasCtx.font = "14px monospace";
+            canvasCtx.fillText(`SYS.TIME: ${new Date().toISOString()}`, 10, height - 10);
+            canvasCtx.fillText(`TRACKING: ONLINE`, 10, height - 25);
+
+            // PARTICLE SYSTEM LOGIC
+            // Initialize particles if not exists
+            if (!videoRef.current.particles) videoRef.current.particles = [];
+
+            // Update and draw existing particles
+            for (let i = videoRef.current.particles.length - 1; i >= 0; i--) {
+              const p = videoRef.current.particles[i];
+              p.x += p.vx;
+              p.y += p.vy;
+              p.life -= 0.05;
+              p.vy += 0.5; // Gravity
+
+              if (p.life <= 0) {
+                videoRef.current.particles.splice(i, 1);
+              } else {
+                canvasCtx.fillStyle = `rgba(255, 200, 50, ${p.life})`;
+                canvasCtx.beginPath();
+                canvasCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                canvasCtx.fill();
+              }
+            }
+
+            // State Machine
             setStage((prevStage) => {
-              if (angle > 160) {
-                if (prevStage === "DOWN") {
-                  setCount((prevCount) => prevCount + 1);
+              // Only transitions if body is straight
+              if (isBodyStraight) {
+                if (areArmsExtended) {
+                  if (prevStage === "DOWN") {
+                    // ACTION: REP COMPLETE
+                    setCount((prevCount) => {
+                      const newCount = prevCount + 1;
+
+                      // 1. Audio Confirmation
+                      const synth = window.speechSynthesis;
+                      if (synth) {
+                        const utterance = new SpeechSynthesisUtterance(String(newCount));
+                        utterance.rate = 1.2;
+                        utterance.pitch = 1.0;
+                        synth.cancel(); // Stop previous
+                        synth.speak(utterance);
+
+                        // Encouragement every 5 reps
+                        if (newCount % 5 === 0) {
+                          const encouragement = new SpeechSynthesisUtterance("Great work! Keep pushing.");
+                          synth.speak(encouragement);
+                        }
+                      }
+
+                      return newCount;
+                    });
+
+                    // 2. Spawn Particles (Explosion)
+                    if (nose) {
+                      for (let k = 0; k < 30; k++) {
+                        videoRef.current.particles.push({
+                          x: nose.x * width,
+                          y: nose.y * height,
+                          vx: (Math.random() - 0.5) * 10,
+                          vy: (Math.random() - 0.5) * 10 - 5, // Upward bias
+                          life: 1.0,
+                          size: Math.random() * 5 + 2
+                        });
+                      }
+                    }
+                  }
+                  return "UP";
+                } else if (areArmsBent) {
+                  return "DOWN";
                 }
-                return "UP";
-              } else if (angle < 90) {
-                return "DOWN";
               }
               return prevStage;
             });
@@ -330,7 +515,12 @@ const Game = () => {
     }
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const constraints = {
+        video: {
+          deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined
+        }
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       videoRef.current.srcObject = stream;
       videoRef.current.play();
 
@@ -361,10 +551,7 @@ const Game = () => {
     }
   };
 
-  const stopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
-  };
+
 
   const submitVideo = async (blobArg) => {
     const blobToSubmit = blobArg || videoBlob;

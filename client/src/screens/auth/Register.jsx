@@ -17,6 +17,7 @@ function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,10 +33,14 @@ function Register() {
       return;
     }
     setError("");
+    setIsLoading(true);
 
     const registerBackend = async () => {
+      // Use config from environment or default to localhost
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
+      // Note: Fixed https to http for localhost unless certs are set up, common issue.
       const response = await axios.post(
-        "https://localhost:8000/user/register",
+        `${backendUrl}/user/register`,
         {
           username,
           email,
@@ -71,17 +76,19 @@ function Register() {
           }
         } catch (backendErr) {
           console.error("Backend registration error:", backendErr);
-          // If backend also fails (likely duplicate), then user is fully registered.
-          // Or if backend fails with other error.
-          // We can suggest login.
           setError("Account already exists. Please Login.");
           return;
         }
+      } else if (err.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
+      } else {
+        // Generic friendly error
+        setError(
+          err.response?.data?.error || "Registration failed. Please try again."
+        );
       }
-
-      setError(
-        err.message || err.response?.data?.error || "An error occurred during registration"
-      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,29 +111,40 @@ function Register() {
         <input
           type="text"
           placeholder="Username"
+          value={username}
           onChange={(e) => setUsername(e.target.value)}
+          disabled={isLoading}
         />
         <input
           type="email"
           placeholder="Email"
+          value={email}
           onChange={(e) => setEmail(e.target.value)}
+          disabled={isLoading}
         />
         <input
           type="password"
           placeholder="Password"
+          value={password}
           onChange={(e) => setPassword(e.target.value)}
+          disabled={isLoading}
         />
         <div className="button-container">
           <ConnectButton client={client} />
-          <button className="button" onClick={handleRegister}>
-            Register
+          <button
+            className="button"
+            onClick={handleRegister}
+            disabled={isLoading || !walletAddress}
+            style={{ opacity: (isLoading || !walletAddress) ? 0.7 : 1, cursor: (isLoading || !walletAddress) ? 'not-allowed' : 'pointer' }}
+          >
+            {isLoading ? "Creating..." : "Register"}
           </button>
         </div>
 
         {error && <p className="error">{error}</p>}
 
         <p>
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <a href="/login" style={{ pointerEvents: isLoading ? 'none' : 'auto' }}>Login</a>
         </p>
       </div>
     </div>

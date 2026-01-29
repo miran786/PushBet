@@ -68,6 +68,13 @@ const submitResponse = async (req, res) => {
     return res.status(400).json({ message: "No video uploaded" });
   }
 
+  // SECURITY: Check for suspicious files (too small)
+  // A valid webm video of pushups should be at least a few KB.
+  if (videoFile.size < 5000) {
+    console.warn(`[SECURITY] Suspicious video size from ${walletAddress}: ${videoFile.size} bytes`);
+    return res.status(400).json({ message: "Invalid video evidence (file too small)." });
+  }
+
   console.log("Submitting response for wallet:", walletAddress, "Count:", pushupCount);
 
   try {
@@ -81,14 +88,19 @@ const submitResponse = async (req, res) => {
       return res.status(400).json({ message: "walletAddress is required" });
     }
 
+    // SECURITY NOTE: We are currently trusting the client's count if the video exists.
+    // In a production environment, this video must be processed by a server-side ML model
+    // to verify the count matches the claim. 
+    // For now, we rely on the stricter frontend client and this audit trail.
     const count = parseInt(pushupCount, 10) || 0;
     const response = (videoFile && count >= 5) ? "yes" : "no";
+
     game.responses.push({ walletAddress, response });
 
     await game.save();
 
     console.log(
-      `User with wallet ${walletAddress} submitted a ${response} response.`
+      `User with wallet ${walletAddress} submitted a ${response} response. Video size: ${videoFile.size} bytes`
     );
 
     req.io.emit("responseSubmitted", { walletAddress, response });

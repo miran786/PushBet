@@ -24,28 +24,14 @@ const server = https.createServer(credentials, app);
 
 const io = new Server(server, {
   cors: {
-    origin: [
-      "https://localhost:5173",
-      "http://localhost:5173",
-      "https://localhost:5174",
-      "http://localhost:5174",
-      "https://192.168.31.201:5174",
-      "http://192.168.31.201:5174",
-    ],
+    origin: "*", // Allow any origin for hackathon demo
     methods: ["GET", "POST"],
   },
 });
 
 app.use(
   cors({
-    origin: [
-      "https://localhost:5173",
-      "http://localhost:5173",
-      "https://localhost:5174",
-      "http://localhost:5174",
-      "https://192.168.31.201:5174",
-      "http://192.168.31.201:5174",
-    ],
+    origin: true, // Reflects the request origin
     methods: ["GET", "POST"],
     credentials: true,
   })

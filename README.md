@@ -1,14 +1,21 @@
-# PushBet
+# PushBet 🚀
+> **The future of decentralized betting. Fair, transparent, and real-time.**
 
-A full-stack decentralized application (dApp) built for the Hackathon. This project features a React-based frontend, a Node.js/Express backend, and integrates with blockchain smart contracts.
+PushBet is a full-stack decentralized application (dApp) built for the Hackathon. It bridges the gap between traditional betting and blockchain transparency, allowing users to wager on pushup challenges in real-time.
 
-## Features
+## 🌟 Key Features
 
-*   **Decentralized Interaction**: seamless integration with blockchain wallets and smart contracts using Thirdweb and Web3.js.
-*   **Real-time Updates**: Live data synchronization using Socket.io.
-*   **User Authentication**: Secure user management.
-*   **Robust Backend**: RESTful API powered by Node.js and Express.
-*   **Containerized Database**: MongoDB setup via Docker for easy deployment.
+*   **🛡️ Trustless Transactions**: Powered by Smart Contracts (Solidity), ensuring every bet is secure and payout is guaranteed.
+*   **⚡ Real-Rime Action**: Live updates via Socket.io for instant game status and opponent moves.
+*   **🔐 Seamless Web3 Auth**: Integrated with Thirdweb & MetaMask for one-click wallet login.
+*   **🤖 Anti-Cheat System**: (Coming Soon) AI-powered video verification to ensure fair play.
+*   **📦 Dockerized**: One-command setup for the full stack.
+
+## 📸 Screenshots
+
+| Landing Page | Game Interface |
+|:---:|:---:|
+| *(Add Screenshot)* | *(Add Screenshot)* |
 
 ## Tech Stack
 
@@ -27,7 +34,7 @@ A full-stack decentralized application (dApp) built for the Hackathon. This proj
 
 ### Blockchain
 *   **Smart Contracts**: Solidity
-*   **Development**: Hardhat / Foundry (implied by file structure)
+*   **Deployment**: (e.g., Remix, Thirdweb, or Hardhat - Update this based on how you deployed)
 
 ## Prerequisites
 
