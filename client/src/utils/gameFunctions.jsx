@@ -78,13 +78,14 @@ export const initializeSocketListeners = (
 };
 
 // Updated joinGame function to return error message if any
-export const joinGame = async (userId, stakeAmount, showNotification) => {
+export const joinGame = async (userId, stakeAmount, showNotification, walletAddress) => {
   try {
     const response = await axios.post(
       `/api/game/joinGame`,
       {
         userId,
         stake: stakeAmount,
+        walletAddress,
       }
     );
 
@@ -96,7 +97,7 @@ export const joinGame = async (userId, stakeAmount, showNotification) => {
       return ""; // No error
     }
   } catch (error) {
-    console.error("Error joining the game:", error);
+    console.error("Error joining the game:", error.response?.data || error.message);
     showNotification("Failed to join the game. Please try again.", <FaTimes />);
     return (
       error.response?.data?.message ||

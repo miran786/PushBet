@@ -41,7 +41,7 @@ function Register() {
       const backendUrl = "/api";
 
       const response = await axios.post(
-        `${backendUrl}/user/register`,
+        `/api/user/register`,
         {
           username,
           email,

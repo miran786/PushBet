@@ -15,10 +15,25 @@ const joinGame = async (req, res) => {
       return res.status(404).json({ message: "No game available to join" });
     }
 
-    const user = await User.findById(userId);
-    if (!user || user.funds < stake) {
-      console.log("Insufficient funds or user not found.");
-      return res.status(400).json({ message: "Insufficient funds" });
+    let user;
+    if (userId) {
+      user = await User.findById(userId);
+    } else if (req.body.walletAddress) {
+      user = await User.findOne({ walletAddress: req.body.walletAddress });
+      if (!user) {
+        // Create a new "Guest" user
+        console.log("Creating new guest user for wallet:", req.body.walletAddress);
+        user = new User({
+          walletAddress: req.body.walletAddress,
+          username: `Guest_${req.body.walletAddress.slice(0, 6)}`,
+        });
+        await user.save();
+      }
+    }
+
+    if (!user) {
+      console.log("User not found and could not be created.");
+      return res.status(404).json({ message: "User not found" });
     }
     if (user.activeGame === game._id) {
       console.log("User already in a game.");
@@ -26,7 +41,7 @@ const joinGame = async (req, res) => {
     }
 
     // Deduct the stake from the user's funds
-    user.funds -= stake;
+    // user.funds -= stake; // REMOVED: Funds are handled by Smart Contract
     user.activeGame = game._id;
 
     // Add the user and their stake to the players array

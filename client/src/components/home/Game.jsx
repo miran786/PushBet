@@ -16,8 +16,8 @@ import { Camera } from "@mediapipe/camera_utils";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 
 const Game = ({ selectedDeviceId, isSuspicious }) => {
-  const { user } = useContext(AuthContext);
-  const walletAddress = user?.walletAddress;
+  const { user, walletAddress: contextWalletAddress } = useContext(AuthContext);
+  const walletAddress = contextWalletAddress || user?.walletAddress;
   const [notification, setNotification] = useState("");
   const [progress, setProgress] = useState(0);
   const [icon, setIcon] = useState(null);
@@ -338,12 +338,12 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
     }
   }, [isRecording]);
   /* Fix: isUserInGame should check walletAddress in players array of objects */
-  const isUserInGame = players.some((p) => p.walletAddress === user?.walletAddress);
+  const isUserInGame = players.some((p) => p.walletAddress === walletAddress);
 
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/`);
+        const response = await axios.get(`/api/game/`);
         if (response.data.message === "No games found.") {
           setGameStatus("none");
         } else {
@@ -362,7 +362,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
           /* Fix: Check using walletAddress */
           setHasJoinedGame(
             (currentGame.players || []).some(
-              (p) => p.walletAddress === user?.walletAddress
+              (p) => p.walletAddress === walletAddress
             )
           );
         }
@@ -382,12 +382,17 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
   }, [user]); /* Added user to dependency to ensure check runs when user loads */
 
   const handleJoinGame = async () => {
+    console.log("handleJoinGame called. User:", user);
     setLoading(true);
-    if (!user) {
-      showNotification("Please log in to join the game.");
+    // Allow joining if we have a user (logged in) OR just a wallet address
+    if (!user && !walletAddress) {
+      showNotification("Please connect your wallet to join.");
       setLoading(false);
       return;
     }
+
+    const currentUserId = user ? user._id : null;
+    const currentWallet = walletAddress || (user ? user.walletAddress : null);
 
     if (!stake || isNaN(stake)) {
       showNotification("Please enter a valid stake amount.");
@@ -409,12 +414,13 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
         stake
       );
 
-      const errorMessage = await joinGame(user._id, stake, showNotification);
+      // Pass walletAddress as well
+      const errorMessage = await joinGame(currentUserId, stake, showNotification, currentWallet);
       if (!errorMessage) {
         /* Fix: Push object to match state structure */
         setPlayers((prevPlayers) => [
           ...prevPlayers,
-          { walletAddress: user.walletAddress, stakeAmount: parseFloat(stake) },
+          { walletAddress: currentWallet, stakeAmount: parseFloat(stake) },
         ]);
         setStake("");
         setHasJoinedGame(true);
@@ -466,10 +472,10 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
   }, [gameStatus]);
 
   const checkUserResult = async () => {
-    if (!user) return; // Prevent check if user is not logged in
+    if (!walletAddress) return; // Wait until we have a wallet address
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/result/${user.walletAddress}`
+        `/api/game/result/${walletAddress}`
       );
       setUserResult(response.data.result);
     } catch (error) {
@@ -564,7 +570,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
 
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_URL || "https://localhost:8000"}/game/submitResponse`,
+        `/api/game/submitResponse`,
         formData,
         {
           headers: {
@@ -591,7 +597,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
   );
 
   // Find current user's stake
-  const myPlayer = players.find(p => p.walletAddress === user?.walletAddress);
+  const myPlayer = players.find(p => p.walletAddress === walletAddress);
 
   return (
     <div className="game-container">
