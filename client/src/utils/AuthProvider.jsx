@@ -6,7 +6,7 @@ import axios from "axios";
 // Create context
 export const AuthContext = createContext();
 
-import { ConnectButton, useActiveAccount } from "thirdweb/react";
+import { ConnectButton, useActiveAccount, useDisconnect, useActiveWallet } from "thirdweb/react";
 
 // AuthProvider component
 export const AuthProvider = ({ children }) => {
@@ -15,6 +15,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const activeAccount = useActiveAccount();
+  const { disconnect } = useDisconnect();
+  const wallet = useActiveWallet();
 
   useEffect(() => {
     if (activeAccount) {
@@ -32,8 +34,6 @@ export const AuthProvider = ({ children }) => {
       if (currentUser) {
         // Fetch user details from MongoDB using the email
         try {
-          // You need to import axios if not already imported, but let's assume it is or use fetch
-          // Better to use axios as per project standard
           const response = await axios.post(`/api/user/get-by-email`, {
             email: currentUser.email
           });
@@ -53,13 +53,12 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   const logout = async () => {
     try {
       await auth.signOut();
+      if (wallet) {
+        disconnect(wallet);
+      }
       setUser(null);
       setWalletAddress(null);
     } catch (error) {
@@ -67,9 +66,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, setUser, walletAddress, setWalletAddress, logout }}
+      value={{
+        user,
+        loading,
+        logout,
+        walletAddress
+      }}
     >
       {children}
     </AuthContext.Provider>

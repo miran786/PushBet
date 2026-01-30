@@ -108,7 +108,11 @@ const submitResponse = async (req, res) => {
     // to verify the count matches the claim. 
     // For now, we rely on the stricter frontend client and this audit trail.
     const count = parseInt(pushupCount, 10) || 0;
-    const response = (videoFile && count >= 5) ? "yes" : "no";
+
+    console.log(`[DEBUG] Wallet: ${walletAddress}, Count: ${count}, Target: ${game.targetPushups}, FileSize: ${videoFile.size}`);
+
+    // Use game's target pushups
+    const response = (videoFile && count >= game.targetPushups) ? "yes" : "no";
 
     game.responses.push({ walletAddress, response });
 

@@ -194,3 +194,39 @@ export const addTokenToMetaMask = async (tokenAddress, tokenSymbol, tokenDecimal
     console.error("Error adding token to MetaMask:", error);
   }
 };
+
+export const getTokenBalance = async (tokenAddress, walletAddress) => {
+  const web3 = await initializeWeb3();
+  if (!web3) return "0";
+
+  // Minimal ABI for balanceOf function
+  const minABI = [
+    {
+      constant: true,
+      inputs: [{ name: "_owner", type: "address" }],
+      name: "balanceOf",
+      outputs: [{ name: "balance", type: "uint256" }],
+      type: "function",
+    },
+    {
+      constant: true,
+      inputs: [],
+      name: "decimals",
+      outputs: [{ name: "", type: "uint8" }],
+      type: "function",
+    }
+  ];
+
+  try {
+    const tokenContract = new web3.eth.Contract(minABI, tokenAddress);
+    const balance = await tokenContract.methods.balanceOf(walletAddress).call();
+    const decimals = await tokenContract.methods.decimals().call();
+
+    // Format balance
+    const formattedBalance = Number(web3.utils.fromWei(balance, decimals === '6' ? 'mwei' : 'ether')).toFixed(2);
+    return formattedBalance;
+  } catch (error) {
+    console.error("Error fetching token balance:", error);
+    return "0";
+  }
+};

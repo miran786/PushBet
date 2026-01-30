@@ -12,9 +12,6 @@ function BottomTab() {
       <NavLink to="/wallet" activeClassName="active">
         <FaWallet size={24} />
       </NavLink>
-      <NavLink to="/games" activeClassName="active">
-        <FaGamepad size={24} />
-      </NavLink>
       <NavLink to="/ranking" activeClassName="active">
         <FaTrophy size={24} />
       </NavLink>

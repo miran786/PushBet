@@ -40,6 +40,7 @@ app.use(
 
 // Middleware to use io in controllers
 app.use((req, res, next) => {
+  console.log(`[DEBUG] Incoming Request: ${req.method} ${req.url}`);
   req.io = io;
   next();
 });
@@ -61,6 +62,12 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
+});
+
+// DEBUG: 404 Handler
+app.use((req, res, next) => {
+  console.log(`[ERROR] 404 Not Found: ${req.method} ${req.url}`);
+  res.status(404).json({ message: "Route not found", path: req.url });
 });
 
 // Start the server

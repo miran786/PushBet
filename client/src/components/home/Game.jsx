@@ -54,16 +54,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
     return angle;
   };
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-    }
-    setVideoBlob(null); // Clear any previous video
-    // Reset count and stage
-    setCount(0);
-    setStage("DOWN");
-  };
+
 
   useEffect(() => {
     if (isRecording && videoRef.current) {
@@ -263,6 +254,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
                     // ACTION: REP COMPLETE
                     setCount((prevCount) => {
                       const newCount = prevCount + 1;
+                      countRef.current = newCount; // SYNC REF FOR SUBMISSION
 
                       // 1. Audio Confirmation
                       const synth = window.speechSynthesis;
@@ -455,6 +447,8 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          clearInterval(timer);
+          endRecordingProcess(); // Stop recording when time is up
           return 0;
         }
         return prev - 1;
@@ -551,10 +545,24 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
       setIsRecording(true);
       // Reset count and stage when recording starts to avoid false positives
       setCount(0);
-      setStage("UP"); // Force user to start from UP position (or at least go UP before going DOWN)
+      countRef.current = 0; // Explicitly reset ref
+      setStage("UP"); // Force user to start from UP position
     } catch (error) {
       console.error("Error starting video recording:", error);
     }
+  };
+
+  const endRecordingProcess = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+    // Explicitly stop video stream tracks to turn off camera light
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsRecording(false);
+    // DO NOT RESET COUNT HERE. It is needed for submission!
   };
 
 
@@ -566,18 +574,40 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
     const formData = new FormData();
     formData.append("video", blobToSubmit, "pushups.webm");
     formData.append("walletAddress", walletAddress);
+    console.log("Submitting video. CountRef:", countRef.current);
     formData.append("pushupCount", countRef.current);
 
+    // DEBUG: Test POST connectivity with small payload
     try {
-      const response = await axios.post(
-        `/api/game/submitResponse`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      console.log("DEBUG: Pinging POST /api/game/submitResponse with JSON...");
+      const pingRes = await fetch(`/api/game/submitResponse`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ test: "ping" })
+      });
+      console.log(`DEBUG: Ping Status: ${pingRes.status}`);
+      if (pingRes.status === 404) {
+        console.error("DEBUG: Route not found even for JSON!");
+      }
+    } catch (e) {
+      console.error("DEBUG: Ping failed", e);
+    }
+
+    try {
+      console.log("Submitting to /api/game/submitResponse...");
+      const response = await fetch(`/api/game/submitResponse`, {
+        method: "POST",
+        body: formData, // fetch handles multipart headers automatically
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status} ${response.statusText}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Submission response:", data);
+
       showNotification("Video submitted successfully!");
       setVideoBlob(null); // Clear the video blob after submission
       setHasSubmitted(true);
@@ -783,7 +813,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
 
             <div className="videoControls">
               <button
-                onClick={isRecording ? stopRecording : startRecording}
+                onClick={isRecording ? endRecordingProcess : startRecording}
                 className="videoButton"
               >
                 {isRecording ? "Stop Recording / Submit" : "Record Pushups"}
