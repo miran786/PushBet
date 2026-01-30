@@ -8,7 +8,8 @@ PushBet is a full-stack decentralized application (dApp) built for the Hackathon
 *   **🛡️ Trustless Transactions**: Powered by Smart Contracts (Solidity), ensuring every bet is secure and payout is guaranteed.
 *   **⚡ Real-Rime Action**: Live updates via Socket.io for instant game status and opponent moves.
 *   **🔐 Seamless Web3 Auth**: Integrated with Thirdweb & MetaMask for one-click wallet login.
-*   **🤖 Anti-Cheat System**: (Coming Soon) AI-powered video verification to ensure fair play.
+*   **🤖 Anti-Cheat System**: Server-Side AI verification (MediaPipe Pose) makes the server authoritative, preventing client-side score manipulation.
+*   **📡 Server-Side Tracking**: Heavy-duty pose analysis is offloaded to a dedicated Python backend, ensuring consistent performance across all devices.
 *   **📦 Dockerized**: One-command setup for the full stack.
 
 ## 📸 Screenshots
@@ -25,12 +26,18 @@ PushBet is a full-stack decentralized application (dApp) built for the Hackathon
 *   **Styling**: CSS / Tailwind (if applicable)
 *   **State/Routing**: React Router DOM
 
-### Backend
+### Backend (Game & Auth)
 *   **Runtime**: Node.js
 *   **Framework**: Express.js
 *   **Database**: MongoDB (Mongoose)
 *   **Real-time**: Socket.io
 *   **Authentication**: JSON Web Token (JWT), bcryptjs
+
+### AI Analysis Server (Motion Tracking)
+*   **Language**: Python 3.10+
+*   **Framework**: FastAPI, Uvicorn
+*   **Libraries**: MediaPipe Pose, OpenCV, Python-SocketIO
+*   **Communication**: Socket.IO (Bidirectional streaming)
 
 ### Blockchain
 *   **Smart Contracts**: Solidity
@@ -78,9 +85,25 @@ Start the server:
 ```bash
 npm start
 ```
-*The server will run using `nodemon` for auto-reloading.*
+*The server will run on Port 8000.*
 
-### 4. Frontend Setup
+### 4. AI Server Setup (Python)
+Navigate to the `python_server` directory, install requirements, and start the analysis backend.
+
+```bash
+cd python_server
+pip install -r requirements.txt
+# If there are issues with mediapipe versions:
+# pip install mediapipe==0.10.14 protobuf==4.25.3
+```
+
+Start the Python Server:
+```bash
+python -m uvicorn main:socket_app --host 0.0.0.0 --port 8001 --reload
+```
+*The AI server will run on Port 8001.*
+
+### 5. Frontend Setup
 Open a new terminal, navigate to the client directory, and start the application.
 
 ```bash

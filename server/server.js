@@ -18,58 +18,21 @@ const http = require("http");
 
 // Load SSL credentials or fallback to HTTP
 let server;
-if (process.env.NODE_ENV === "production") {
-  // On Render/Production, use basic HTTP (Load Balancer handles SSL)
-  console.log("Production environment detected. Starting HTTP server.");
-  server = http.createServer(app);
-} else {
-  // Local Development: Try to use HTTPS
-  try {
-    const privateKey = fs.readFileSync("../client/server.key", "utf8");
-    const certificate = fs.readFileSync("../client/server.cert", "utf8");
-    const credentials = { key: privateKey, cert: certificate };
-    server = https.createServer(credentials, app);
-    console.log("Local development: Starting HTTPS server.");
-  } catch (error) {
-    console.warn("SSL certificates not found. Falling back to HTTP.");
-    server = http.createServer(app);
-  }
-}
+// Local Development: Force HTTP to work with Vite Proxy
+// The proxy handles HTTPS for the client, so backend can be HTTP
+console.log("Local development/Production: Starting HTTP server.");
+server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-<<<<<<< HEAD
     origin: "*", // Allow any origin for hackathon demo
-=======
-    origin: [
-      "https://localhost:5173",
-      "http://localhost:5173",
-      "https://localhost:5174",
-      "http://localhost:5174",
-      "https://192.168.31.201:5174",
-      "http://192.168.31.201:5174",
-      "https://push-bet-nine.vercel.app",
-    ],
->>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
     methods: ["GET", "POST"],
   },
 });
 
 app.use(
   cors({
-<<<<<<< HEAD
     origin: true, // Reflects the request origin
-=======
-    origin: [
-      "https://localhost:5173",
-      "http://localhost:5173",
-      "https://localhost:5174",
-      "http://localhost:5174",
-      "https://192.168.31.201:5174",
-      "http://192.168.31.201:5174",
-      "https://push-bet-nine.vercel.app",
-    ],
->>>>>>> 4e53ea28cb243f5076f0a2a905f9e2047b0d4e7f
     methods: ["GET", "POST"],
     credentials: true,
   })

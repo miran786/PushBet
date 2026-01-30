@@ -34,10 +34,24 @@ export default defineConfig({
   ],
   server: {
     https: {
-      key: fs.readFileSync("./server.key"), // Path to your private key
-      cert: fs.readFileSync("./server.cert"), // Path to your certificate
+      key: fs.readFileSync("./server.key"),
+      cert: fs.readFileSync("./server.crt"),
     },
     host: "0.0.0.0",
     port: 3000,
+    proxy: {
+      '/socket.io': {
+        target: 'http://localhost:8000',
+        ws: true,
+        secure: false,
+        changeOrigin: true
+      },
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false
+      }
+    }
   },
 });

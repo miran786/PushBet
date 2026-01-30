@@ -9,7 +9,9 @@ import {
 } from "react-icons/fa";
 
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "https://localhost:8000";
+// Socket.io connects to "/" by default and Vite proxies "/socket.io"
+// For axios, we use "/api" prefix which Vite proxies to backend
+const BACKEND_URL = "/";
 const socket = io(BACKEND_URL);
 
 export const initializeSocketListeners = (
@@ -79,7 +81,7 @@ export const initializeSocketListeners = (
 export const joinGame = async (userId, stakeAmount, showNotification) => {
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_BACKEND_URL || "https://localhost:8000"}/game/joinGame`,
+      `/api/game/joinGame`,
       {
         userId,
         stake: stakeAmount,
@@ -110,7 +112,7 @@ export const submitResponse = async (
   try {
     console.log(`Submiting video ${videoSubmitted} from ${userId}`);
     const response = await axios.post(
-      `${import.meta.env.VITE_BACKEND_URL || "https://localhost:8000"}/game/submitResponse`,
+      `/api/game/submitResponse`,
       {
         userId,
         videoSubmitted,

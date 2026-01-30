@@ -37,8 +37,9 @@ function Register() {
 
     const registerBackend = async () => {
       // Use config from environment or default to localhost
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:8000";
-      // Note: Fixed https to http for localhost unless certs are set up, common issue.
+      // Use proxy endpoint (relative path)
+      const backendUrl = "/api";
+
       const response = await axios.post(
         `${backendUrl}/user/register`,
         {
