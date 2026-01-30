@@ -1,10 +1,14 @@
 import React from "react";
 import Header from "../../components/Header";
 import WalletHero from "../../components/wallet/WalletHero";
-import USDCEarning from "../../components/wallet/USDCEarning";
+
 import BottomSheet from "../../components/wallet/BottomSheet";
+import TransactionHistory from "../../components/wallet/TransactionHistory";
+import { AuthContext } from "../../utils/AuthProvider";
+import { useContext } from "react";
 
 const Wallet = () => {
+  const { user } = useContext(AuthContext);
   return (
     <div>
       <div className="background">
@@ -26,7 +30,8 @@ const Wallet = () => {
       >
         <Header />
         <WalletHero />
-        <USDCEarning />
+
+        <TransactionHistory transactions={user?.pastGames || []} currentUserId={user?.walletAddress} />
         <BottomSheet />
       </div>
     </div>

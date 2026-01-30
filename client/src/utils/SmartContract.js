@@ -223,7 +223,9 @@ export const getTokenBalance = async (tokenAddress, walletAddress) => {
     const decimals = await tokenContract.methods.decimals().call();
 
     // Format balance
-    const formattedBalance = Number(web3.utils.fromWei(balance, decimals === '6' ? 'mwei' : 'ether')).toFixed(2);
+    const decimalsStr = decimals.toString();
+    const unit = decimalsStr === '6' ? 'mwei' : 'ether';
+    const formattedBalance = Number(web3.utils.fromWei(balance, unit)).toFixed(2);
     return formattedBalance;
   } catch (error) {
     console.error("Error fetching token balance:", error);

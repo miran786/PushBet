@@ -7,7 +7,6 @@ import { detectCurrentNetwork } from "../utils/DetectCurrentNetwork";
 const AdminPage = () => {
   const [message, setMessage] = useState("");
   const [gameId, setGameId] = useState(""); // For "end game" command
-  const [latestGame, setLatestGame] = useState(null); // State to hold latest past game data
 
   // Function to handle API requests using axios
   const sendCommand = async (command) => {
@@ -36,40 +35,7 @@ const AdminPage = () => {
     }
   };
 
-  // Function to fetch the latest past game
-  const fetchLatestPastGame = async () => {
-    try {
-      const response = await axios.get(`/api/game/result`); // Proxy handles /api -> http://localhost:8000
-      const gameData = response.data.game; // Use game data directly from the response
 
-      setLatestGame(gameData); // Update the state for UI purposes
-      setMessage("Latest past game data fetched successfully.");
-      const currentNetwork = await detectCurrentNetwork();
-
-      try {
-        console.log("Attempting to return bets");
-        await returnBets(ChainInfo[currentNetwork].gameCA, gameData.winner);
-      } catch (error) {
-        console.error("Failed to return bets: ", error);
-      }
-
-      try {
-        console.log("Attempting to fetch winners");
-        const luckyWinners = await getWinners(
-          ChainInfo[currentNetwork].gameCA,
-          gameData.winner
-        );
-        console.log("Attempting to payout winners");
-
-        await payoutWinners(ChainInfo[currentNetwork].gameCA, luckyWinners);
-      } catch (error) {
-        console.error("Failed to prize winners: ", error);
-      }
-    } catch (error) {
-      console.error("Error fetching latest past game:", error);
-      setMessage("Failed to fetch latest past game.");
-    }
-  };
 
   return (
     <div>
@@ -88,46 +54,8 @@ const AdminPage = () => {
       />
       <button onClick={() => sendCommand("end")}>End Game</button>
 
-      {/* Button to fetch the latest past game */}
-      <button onClick={fetchLatestPastGame}>Show Latest Past Game</button>
-
       {/* Display response message */}
       {message && <p>{message}</p>}
-
-      {/* Display the latest past game data if available */}
-      {latestGame && (
-        <div className="game-details">
-          <h2>Latest Past Game</h2>
-          <p>
-            <strong>Target Pushups:</strong> {latestGame.targetPushups}
-          </p>
-          <p>
-            <strong>Stake Amount:</strong> ${latestGame.stakeAmount}
-          </p>
-          <p>
-            <strong>Players:</strong>{" "}
-            {latestGame.players
-              .map((player) => player.walletAddress)
-              .join(", ")}
-          </p>
-          <p>
-            <strong>Winners:</strong> {latestGame.winner.join(", ")}
-          </p>
-          <p>
-            <strong>Losers Pool:</strong> {latestGame.losersPool.join(", ")}
-          </p>
-          <p>
-            <strong>Responses:</strong>
-          </p>
-          <ul>
-            {latestGame.responses.map((response, index) => (
-              <li key={index}>
-                {response.walletAddress}: {response.response}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };

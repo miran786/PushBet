@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from "react";
-import {
-  IoAddOutline,
-  IoSwapHorizontalOutline,
-  IoScanOutline,
-} from "react-icons/io5";
+import React, { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../../utils/AuthProvider";
+import { getTokenBalance } from "../../utils/SmartContract";
+import ChainInfo from "../../utils/chains.json";
+import { detectCurrentNetwork } from "../../utils/DetectCurrentNetwork";
 
 const Digit = ({ targetDigit }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
 
   useEffect(() => {
-    const position = targetDigit * 10 + 2; // Calculate position for the target digit
+    const position = targetDigit * 10; // Calculate position for the target digit
     setScrollPosition(position);
   }, [targetDigit]);
 
@@ -33,11 +32,49 @@ const Digit = ({ targetDigit }) => {
 };
 
 const WalletHero = () => {
-  const targetValue = 2348789; // Target wallet balance
-  const targetDigits = targetValue.toString().split("").map(Number);
+  const { user, walletAddress } = useContext(AuthContext); // Get walletAddress from AuthContext
+  const [balance, setBalance] = useState(0);
 
-  // Insert commas into the target value for readability
-  const formattedValue = targetValue.toLocaleString().split("").map(Number);
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!walletAddress) return;
+
+      try {
+        const currentNetwork = await detectCurrentNetwork();
+        const chainData = ChainInfo[currentNetwork];
+
+        if (chainData && chainData.usdcTokenCA) {
+          const fetchedBalance = await getTokenBalance(chainData.usdcTokenCA, walletAddress);
+          setBalance(parseFloat(fetchedBalance));
+        } else {
+          // Fallback if no chain data or usdc token CA found
+          setBalance(user?.funds || 0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch on-chain balance:", error);
+        setBalance(user?.funds || 0);
+      }
+    };
+
+    fetchBalance();
+  }, [walletAddress, user]);
+
+  const targetValue = balance;
+
+  // Format targetValue as integer string for digit animation
+  // (Assuming funds are integers for now, or floor them)
+  const targetDigits = Math.floor(targetValue).toString().split("").map(Number);
+
+  // Insert commas into the target value for readability logic
+  // We need to map digits to formatted representation
+  // This tricky part is mapping individual digits to the scrolling component
+  // For simplicity, let's keep the digit animation logic but ensure it handles the number correct.
+  // The original code `targetValue.toLocaleString().split("").map(Number)` produces NaNs for commas
+
+  const formattedValue = Math.floor(targetValue).toLocaleString().split("").map((char) => {
+    const num = Number(char);
+    return isNaN(num) ? char : num;
+  });
 
   return (
     <div style={styles.walletHeroContainer}>
@@ -48,9 +85,9 @@ const WalletHero = () => {
       <div style={styles.balanceContainer}>
         <span style={styles.dollarSign}>$</span>
         {formattedValue.map((digit, index) =>
-          isNaN(digit) ? (
+          typeof digit === 'string' ? (
             <span key={index} style={styles.comma}>
-              ,
+              {digit}
             </span>
           ) : (
             <Digit key={index} targetDigit={digit} />
@@ -58,22 +95,6 @@ const WalletHero = () => {
         )}
       </div>
 
-      <div style={styles.buttonContainer}>
-        <button style={styles.button}>
-          <IoAddOutline size={24} color="white" />
-          <span style={styles.buttonText}>Deposit</span>
-        </button>
-
-        <button style={styles.button}>
-          <IoSwapHorizontalOutline size={24} color="white" />
-          <span style={styles.buttonText}>Transfer</span>
-        </button>
-
-        <button style={styles.button}>
-          <IoScanOutline size={24} color="white" />
-          <span style={styles.buttonText}>Scan</span>
-        </button>
-      </div>
     </div>
   );
 };
@@ -109,16 +130,17 @@ const styles = {
     marginRight: "5px",
   },
   digitContainer: {
-    height: "50px",
+    height: "70px",
     overflow: "hidden",
-    width: "30px",
+    width: "35px",
   },
   digit: {
     display: "flex",
     flexDirection: "column",
   },
   digitItem: {
-    height: "50px",
+    height: "60px",
+    lineHeight: "60px",
     textAlign: "center",
     fontSize: "50px",
     fontWeight: "800",
@@ -128,28 +150,6 @@ const styles = {
     fontSize: "50px",
     fontWeight: "800",
     color: "white",
-    lineHeight: "50px",
-  },
-  buttonContainer: {
-    display: "flex",
-    flexDirection: "row",
-    marginTop: "20px",
-    justifyContent: "space-between",
-  },
-  button: {
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    padding: "10px 20px",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "0 5px",
-    border: "none",
-    cursor: "pointer",
-  },
-  buttonText: {
-    color: "white",
-    marginLeft: "10px",
-    fontWeight: "bold",
+    lineHeight: "60px",
   },
 };

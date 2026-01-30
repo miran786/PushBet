@@ -131,6 +131,7 @@ module.exports = (io) => {
       const user = await User.findOne({ walletAddress: winner.walletAddress });
       if (user) {
         user.funds += (game.stakeAmount + (rewardAmount || 0)); // Return Principal + Reward
+        user.pastGames.push(pastGame._id); // Add game to history
         await user.save();
       }
     }
@@ -140,6 +141,7 @@ module.exports = (io) => {
       const user = await User.findOne({ walletAddress: loser.walletAddress });
       if (user) {
         user.losses.push(game.stakeAmount);
+        user.pastGames.push(pastGame._id); // Add game to history
         await user.save();
       }
     }

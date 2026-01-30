@@ -41,7 +41,11 @@ const joinGame = async (req, res) => {
     }
 
     // Deduct the stake from the user's funds
-    // user.funds -= stake; // REMOVED: Funds are handled by Smart Contract
+    user.funds -= stake; // REMOVED: Funds are handled by Smart Contract -> Logic restored for Node-based balancel
+    // user.funds -= stake;
+    if (user.funds < 0) {
+      return res.status(400).json({ message: "Insufficient funds" });
+    }
     user.activeGame = game._id;
 
     // Add the user and their stake to the players array
