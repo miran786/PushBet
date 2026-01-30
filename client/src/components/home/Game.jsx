@@ -732,7 +732,7 @@ const Game = ({ selectedDeviceId, isSuspicious }) => {
           <img src={Logo} alt="Game Logo" className="logo" />
         </div>
 
-        {gameStatus === "created" && !hasJoinedGame ? (
+        {gameStatus === "created" && !hasJoinedGame && !isSuspicious ? (
           <div className="inputContainer">
             <input
               type="number"
