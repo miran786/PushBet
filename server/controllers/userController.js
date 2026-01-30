@@ -59,10 +59,7 @@ exports.getUserByEmail = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
-  } catch (err) {
-  res.status(400).json({ error: err.message });
-}
-};
+
 
 exports.getLeaderboard = async (req, res) => {
   try {
